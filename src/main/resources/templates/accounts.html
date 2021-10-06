@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>ATM</title>
+    <link href="/css/styles.css" rel="stylesheet"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="/js/main.js" type="text/javascript"></script>
+    <meta http-equiv="Pragma" content="no-cache">
+</head>
+<body th:align="center">
+<p class="error" th:if="${errorMsg}" th:align="center"><span th:text="${errorMsg}"></span></p>
+<h3 th:align="center">Account Details</h3>
+<div class="box" th:align="center">
+    <div>
+        Logged in user: <b class="user" th:text="${name}"></b>
+        <form method="POST" th:action="@{/app-logout}">
+            <input type="submit" value="Logout"/>
+        </form>
+        <div>Ledger Balance: <span th:text="${accountInfo.ledgerBalance}"></span></div>
+        <div>Depositable Balance: <span th:text="${accountInfo.depositableAmount}"></span></div>
+    </div>
+</div>
+<br/>
+<br/>
+
+<div  class="box" th:align="center">
+    <div>Withdraw from card:</div>
+    <input id="withdraw" type="number"></input>
+    <br/>
+    <div>Card details:</div>
+    <br/>
+    <div>Pin2:</div>
+    <input id="wpin2" type="text" maxlength="4"></input>
+    <br/>
+    <div>CVV2:</div>
+    <input id="wcvv2" type="text" maxlength="3"></input>
+    <br/>
+    <br/>
+    <button onclick="location.href='/app/account/cashOut/'+$('#withdraw').val()+'/'+$('#wpin2').val()+'/'+$('#wcvv2').val()">
+        Withdraw
+    </button>
+</div>
+<br/><br/>
+<div class="box" th:align="center">
+    <div>Deposit to card:</div>
+    <input id="deposit" type="number"></input>
+    <br/>
+    <div>Card details:</div>
+    <br/>
+    <div>Pin2:</div>
+    <input id="dpin2" type="text" maxlength="4"></input>
+    <br/>
+    <div>CVV2:</div>
+    <input id="dcvv2" type="text" maxlength="3"></input>
+    <br/>
+    <br/>
+    <button onclick="location.href='/app/account/cashIn/'+$('#deposit').val()+'/'+$('#dpin2').val()+'/'+$('#dcvv2').val()">
+        Deposit
+    </button>
+</div>
+<br/>
+<br/>
+</body>
+</html>

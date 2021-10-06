@@ -1,0 +1,82 @@
+package com.russel.atm.simulator.iso.transformer.cashout;
+
+import com.russel.atm.simulator.common.BaseRequestService;
+import com.russel.atm.simulator.common.CashOutAddRequest;
+import com.russel.atm.simulator.common.ServiceAttribute;
+import com.russel.atm.simulator.exception.TransformerException;
+import com.russel.atm.simulator.iso.MTI;
+import com.russel.atm.simulator.iso.ProcessCode;
+import com.russel.atm.simulator.iso.transformer.BaseRequestTransformer;
+import com.russel.atm.simulator.util.DateUtil;
+import com.russel.atm.simulator.util.StringUtil;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.jpos.iso.ISOException;
+import org.jpos.iso.ISOMsg;
+
+import java.util.Date;
+
+/**
+ * @author Rassul Hessampour
+ * @version $Revision: 1.1.0 $
+ */
+public class CashOutAddRqTransformer extends BaseRequestTransformer<CashOutAddRequest> {
+    public static final String CVV2_TAG = "P92";
+
+    @Override
+    protected ISOMsg transform(BaseRequestService o) {
+        CashOutAddRequest request= (CashOutAddRequest)o;
+        try {
+            ISOMsg msg = new ISOMsg();
+            msg.setPackager(asciiPackager);
+            msg.set(CashOutAddRq.MTI.getPosition(), MTI.TRANSFER_REQUEST_COMMAND.getCode());
+            msg.set(CashOutAddRq.PAN.getPosition(), request.getFundTransfer().getSourceCardNo());
+            msg.set(CashOutAddRq.PROCESSING_CODE.getPosition(), createProcessCode());
+            msg.set(CashOutAddRq.TRANSACTION_AMOUNT.getPosition(), request.getFundTransfer().getAmount().toString());
+            msg.set(CashOutAddRq.TRANSACTION_FEE_AMOUNT.getPosition(), request.getFundTransfer().getAmount().toString());
+            msg.set(CashOutAddRq.TRANSMISSON_DATE_TIME.getPosition(), DateUtil.getDate(new Date(),
+                    DateUtil.ISO_TRANSMISSION_DATE_PATTERN));
+            msg.set(CashOutAddRq.SYSTEM_TRACE_AUDIT_NUMBER.getPosition(),
+                    request.getRequestUUID().substring(request.getRequestUUID().length() - 6));
+            msg.set(CashOutAddRq.LOCAL_TRANSACTION_DATE_TIME.getPosition(),
+                    DateUtil.getDate(new Date(),
+                            DateUtil.ISO_LOCAL_TRANSACTION_DATE_TIME_PATTERN));
+            msg.set(CashOutAddRq.EXPIRY_DATE.getPosition(),
+                    (request.getTrk2EquivData() != null &&
+                            request.getTrk2EquivData().getCardExpirationYearMonth() != null ?
+                            request.getTrk2EquivData().getCardExpirationYearMonth().getCardExpirationDate() : null));
+            msg.set(CashOutAddRq.POINT_OF_SERVICE_DATA_CODE.getPosition(), DEFAULT_POINT_OF_SERVICE);
+            msg.set(CashOutAddRq.ACQUIRER_INSTITUTION_ID.getPosition(), DEFAULT_ACQUIRER_INSTITUTION_ID);
+            msg.set(CashOutAddRq.FORWARDING_INSTITUTION_ID.getPosition(),
+                    DEFAULT_ACQUIRER_INSTITUTION_ID);
+            msg.set(CashOutAddRq.RETRIEVAL_REFERENCE_NO.getPosition(),
+                    StringUtil.hasText(request.getRequestUUID()) ?
+                            (request.getRequestUUID().length() > 6 ?
+                                    request.getRequestUUID().substring(0, 6) :
+                                    request.getRequestUUID()) :
+                            RandomStringUtils.randomNumeric(6));
+            msg.set(CashOutAddRq.CARD_ACCEPT_TERMINAL_ID.getPosition(), DEFAULT_CARD_ACCEPT_TERMINAL_ID);
+            msg.set(CashOutAddRq.CARD_ACCEPT_ID_CODE.getPosition(), DEFAULT_CARD_ACCEPT_ID_CODE);
+            msg.set(CashOutAddRq.CARD_ACCEPT_NAME_LOCATION.getPosition(), DEFAULT_CARD_ACCEPT_NAME_LOCATION);
+            if (request.getTrk2EquivData() != null) {
+                msg.set(CashOutAddRq.ADDITIONAL_PRIVATE_DATA.getPosition(), tailoreCVV2(request.getTrk2EquivData().getCVV2()));
+            }
+            msg.set(CashOutAddRq.TRANSACTION_CURRENCY_CODE.getPosition(), DEFAULT_CURRENCY_CODE);
+            msg.set(CashOutAddRq.PIN_DATA.getPosition(), (request.getTrk2EquivData() != null) ?
+                    encryptPin(request.getTrk2EquivData().getPin()) : null);
+            return msg;
+        }
+        catch (ISOException e) {
+            throw new TransformerException(e.getMessage());
+        }
+    }
+
+    private String createProcessCode() {
+        return ProcessCode.CASHOUT.getCode();
+    }
+
+    @Override
+    public ServiceAttribute getServiceAttribute() {
+        return ServiceAttribute.CASH_OUT_ADD;
+    }
+
+}
